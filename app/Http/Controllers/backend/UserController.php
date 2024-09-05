@@ -69,6 +69,4 @@ class UserController extends Controller
         return redirect('/signup')->with('message', 'User already exists');
     }
 }
-
-
 }

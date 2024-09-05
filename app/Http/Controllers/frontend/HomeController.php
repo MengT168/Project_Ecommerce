@@ -10,78 +10,146 @@ use Illuminate\Support\Facades\DB;
 class HomeController extends Controller
 {
     public function Home()
-{
-    $newProducts = DB::table('product')->orderByDesc('id')->limit(4)->get();
-    $promotionProducts = DB::table('product')->where('sale_price', '>', 0)->limit(4)->get();
-    $popularProducts = DB::table('product')->orderByDesc('viewer')->limit(4)->get();
-    
-    $subscribedProductIds = [];
-
-    if (Auth::check()) {
-        $userId = Auth::user()->id;
-        $dbSubScribe = DB::table('subscribe')->where('user_id', $userId)->first();
+    {
+        $newProducts = DB::table('product')->orderByDesc('id')->limit(4)->get();
+        $promotionProducts = DB::table('product')->where('sale_price', '>', 0)->limit(4)->get();
+        $popularProducts = DB::table('product')->orderByDesc('viewer')->limit(4)->get();
         
-        if ($dbSubScribe) {
-            $subId = $dbSubScribe->id;
-            $subscribedProducts = DB::table('subscribe_item')->where('subscribe_id', $subId)->pluck('product_id');
-            $subscribedProductIds = $subscribedProducts->toArray();
-        }
-    }
-
-    return view('frontend.home', [
-        'newProducts' => $newProducts,
-        'promotionPro' => $promotionProducts,
-        'popularProduct' => $popularProducts,
-        'subscribedProductIds' => $subscribedProductIds
-    ]);
-}
-
-
-
-public function Product($slug)
-{
-    $product = DB::table('product')->where('slug', $slug)->get();
-    if (count($product) == 0) {
-        return redirect('/404');
-    }
-
-    $categoryId = $product[0]->category;
-    $currentViewer = $product[0]->viewer;
-    $increaseViewer = $currentViewer + 1;
-    $productId = $product[0]->id;
-    DB::table('product')->where('id', $productId)->update([
-        'viewer' => $increaseViewer
-    ]);
-
-    $relatedProduct = DB::table('product')->where('category', $categoryId)
-                        ->where('id', '<>', $productId)
-                        ->limit(4)
-                        ->orderByDesc('id')
-                        ->get();
-
-    $userId = null;
-    $isSubscribed = false;
-
-    if (Auth::check()) {
-        $userId = Auth::user()->id;
-        $dbSubScribe = DB::table('subscribe')->where('user_id', $userId)->first();
-        if ($dbSubScribe) {
-            $subId = $dbSubScribe->id;
-            $subscribedProducts = DB::table('subscribe_item')->where('subscribe_id', $subId)->pluck('product_id');
-            $isSubscribed = in_array($productId, $subscribedProducts->toArray());
-        }
-    }
-
-    return view('frontend.product', [
-        'product' => $product,
-        'relatedProduct' => $relatedProduct,
-        'isSubscribed' => $isSubscribed,
-        'userId' => $userId // Pass the userId to the view
-    ]);
-}
-
-
+        $subscribedProductIds = [];
     
+        if (Auth::check()) {
+            $userId = Auth::user()->id;
+    
+            $subIds = DB::table('subscribe')->where('user_id', $userId)->pluck('id')->toArray();
+    
+            if (!empty($subIds)) {
+                $subscribedProductIds = DB::table('subscribe_item')
+                                          ->whereIn('subscribe_id', $subIds)
+                                          ->pluck('product_id')
+                                          ->toArray();
+            }
+        }
+    
+        return view('frontend.home', [
+            'newProducts' => $newProducts,
+            'promotionPro' => $promotionProducts,
+            'popularProduct' => $popularProducts,
+            'subscribedProductIds' => $subscribedProductIds
+        ]);
+    }
+
+    public function Shop(Request $request)
+    {
+        $limitPage = 3;
+        $currentPage = $request->input('page', 1);
+
+        $offset = ($currentPage - 1) * $limitPage;
+
+        $productObj = DB::table('product');
+
+        if ($request->category) {
+            $categorySlug = $request->category;
+            $categoryId = DB::table('category')->where('slug', $categorySlug)->get();
+            $product = $productObj->where('category', $categoryId[0]->id)->limit($limitPage)->offset($offset);
+            $productCount = DB::table('product')->where('category', $categoryId[0]->id)->count();
+        } elseif ($request->price) {
+            if ($request->price == 'max') {
+                $product = $productObj->orderByDesc('regular_price')->limit($limitPage)->offset($offset);
+            } else {
+                $product = $productObj->orderBy('regular_price', 'ASC')->limit($limitPage)->offset($offset);
+            }
+            $productCount = DB::table('product')->count();
+        } elseif ($request->promotion) {
+            $product = $productObj->where('sale_price', '>', 0)->limit($limitPage)->offset($offset);
+            $productCount = DB::table('product')->where('sale_price', '>', 0)->count();
+        } else {
+            $product = $productObj->limit($limitPage)->offset($offset);
+            $productCount = DB::table('product')->count();
+        }
+        $product = $productObj->orderByDesc('id')->get();
+
+        $category = DB::table('category')->orderByDesc('id')->get();
+        $totalPage = ceil($productCount / $limitPage);
+
+        return view('frontend.shop', ['product' => $product, 'totalPage' => $totalPage, 'category' => $category]);
+    }
+
+    public function mySub()
+    {
+        $userId = Auth::user()->id;
+    
+        $subIds = DB::table('subscribe')->where('user_id', $userId)->pluck('id')->toArray();
+        $products = [];
+    
+        if (!empty($subIds)) {
+            $products = DB::table('product')
+                            ->whereIn('id', function($query) use ($subIds) {
+                                $query->select('product_id')
+                                      ->from('subscribe_item')
+                                      ->whereIn('subscribe_id', $subIds);
+                            })
+                            ->get();
+        }
+    
+        return view('frontend.my-audio', ['products' => $products]);
+    }
+    
+
+
+
+    public function Product($slug)
+    {
+        $product = DB::table('product')->where('slug', $slug)->first();
+        if (!$product) {
+            return redirect('/404');
+        }
+    
+        $productId = $product->id;
+        $currentViewer = $product->viewer;
+        $increaseViewer = $currentViewer + 1;
+        DB::table('product')->where('id', $productId)->update(['viewer' => $increaseViewer]);
+    
+        $categoryId = $product->category;
+        $relatedProduct = DB::table('product')
+                            ->where('category', $categoryId)
+                            ->where('id', '<>', $productId)
+                            ->limit(4)
+                            ->orderByDesc('id')
+                            ->get();
+    
+        $userId = null;
+        $isSubscribed = false;
+        $dbSubScribe = [];
+    
+        if (Auth::check()) {
+            $userId = Auth::user()->id;
+    
+            $subscriptionIds = DB::table('subscribe')
+                                 ->where('user_id', $userId)
+                                 ->pluck('id');
+    
+            if ($subscriptionIds->isNotEmpty()) {
+                $subscribedProducts = DB::table('subscribe_item')
+                                        ->whereIn('subscribe_id', $subscriptionIds)
+                                        ->pluck('product_id')
+                                        ->toArray();
+    
+                $isSubscribed = in_array($productId, $subscribedProducts);
+    
+                $dbSubScribe = $subscribedProducts;
+            }
+        }
+    
+        return view('frontend.product', [
+            'product' => $product,
+            'relatedProduct' => $relatedProduct,
+            'isSubscribed' => $isSubscribed,
+            'userId' => $userId,
+            'dbSubScribe' => $dbSubScribe
+        ]);
+    }
+
+
 
     public function AddCart(Request $request)
     {
@@ -130,8 +198,6 @@ public function Product($slug)
                 ]);
             }
 
-
-
             $totalAmount = $cartId[0]->total_amount + $price ;
 
             DB::table('cart')->where('id', $cartId[0]->id)->update([
@@ -146,22 +212,25 @@ public function Product($slug)
     }
 
     public function CartItem()
-    {
-        $userId = Auth::user()->id;
-        $cartId = DB::table('cart')->where('user_id', $userId)->get();
+{
+    $userId = Auth::user()->id;
+    $cart = DB::table('cart')->where('user_id', $userId)->first();
 
-        $cartId = $cartId[0]->id;
-
-        $cartItems = DB::table('cart_items')
-            ->leftJoin('product', 'cart_items.product_id', '=', 'product.id')
-            ->leftJoin('cart', 'cart.id', 'cart_items.cart_id')
-            ->where('cart_items.cart_id', $cartId)
-            ->where('status', 0)
-            ->select('cart_items.*', 'product.name', 'product.thumbnail', 'cart.total_amount')
-            ->get();
-
-        return view('frontend.cart-item', ['cartItems' => $cartItems]);
+    if (!$cart) {
+        abort(404, 'Cart not found');
     }
+
+    $cartItems = DB::table('cart_items')
+        ->leftJoin('product', 'cart_items.product_id', '=', 'product.id')
+        ->leftJoin('cart', 'cart.id', 'cart_items.cart_id')
+        ->where('cart_items.cart_id', $cart->id)
+        ->where('status', 0)
+        ->select('cart_items.*', 'product.name', 'product.thumbnail', 'cart.total_amount')
+        ->get();
+
+    return view('frontend.cart-item', ['cartItems' => $cartItems]);
+}
+
 
     public function checkOut()
     {
@@ -245,7 +314,10 @@ public function Product($slug)
     }
 
     public function myOrder(){
-        $dbOrder = DB::table('subscribe')->orderByDesc('id')->get();
+        if(Auth::check()>0){
+            $id = Auth::user()->id;
+            $dbOrder = DB::table('subscribe')->where('user_id',$id)->orderByDesc('id')->get();
+        }
         return view('frontend.my-order',['myOrder'=>$dbOrder]);
     }
     public function viewOrder($id){
@@ -258,6 +330,61 @@ public function Product($slug)
 
         return view('frontend.my-order-history',['subscribeItems'=>$dbSubscribeItems , 'subscribe'=>$dbSubscribe]);        
     }
+
+
+    public function myProfile()
+{
+    if (Auth::check()) {
+        $id = Auth::user()->id;
+        $dbUser = DB::table('users')->where('id', $id)->get();
+        $subIds = DB::table('subscribe')->where('user_id', $id)->pluck('id');
+
+        // Initialize productSubScribe
+        $productSubScribe = 0;
+
+        if (!$subIds->isEmpty()) {
+            $productSubScribe = DB::table('subscribe_item')
+                                  ->whereIn('subscribe_id', $subIds)
+                                  ->count('product_id');
+        }
+
+        return view('frontend.my-profile', ['user' => $dbUser, 'product' => $productSubScribe]);
+    }
+
+    return redirect('/signin');
+}
+
+public function editMyProfile(){
+    if(Auth::check()>0){
+        $userId = Auth::user()->id;
+        $dbUser = DB::table('users')->where('id', $userId)->get();
+
+    }
+    return view('frontend.edit-myPro',['User'=>$dbUser]);
+}
+
+public function editMyProfileSubmit(Request $request){
+    $userId = Auth::user()->id;
+    $dbUser = DB::table('users')->where('id',$userId)->get();
+    $name = $request->name;
+    $email = $request->email;
+    if($request->file('img')){
+        $file = $request->file('img');
+        $img = $this->uploadFile($file);
+    }else{
+        $img = $dbUser[0]->image;
+    }
+    $update = DB::table('users')->where('id',$userId)->update(
+        [
+            'name'  => $name,
+            'email' => $email,
+            'image' => $img
+        ]
+    );
+    if($update){
+        return redirect('/my-profile');
+    }
+}
 
     public function recipt()
     {

@@ -45,4 +45,47 @@ class CategoryController extends Controller
         $DBCate = DB::table('category')->get();
         return view('backend.list-category',['cate'=>$DBCate ]);
     }
+
+    public function updateCategory($id){
+        $DbCate = DB::table('category')->where('id',$id)->first();
+        return view('backend.update-category',['cate'=>$DbCate ]);
+    }
+
+    public function updateCategorySubmit(Request $request){
+        $name = $request->name;
+        $id = $request->id;
+        if($name){
+            $exist = $this->checkExistPost('category','name',$name);
+            if($exist){
+                return redirect('/admin/list-category')->with('message','Category already exist');
+            }else{
+                $slug = $this->slug($name);
+                $update = DB::table('category')->where('id',$id)->update([
+                    'name' => $name,
+                    'slug' =>$slug,
+                    'updated_at' => date('Y-m-d h:i:s'),
+                ]);
+                if($update){
+                    $lastId = $this->getLastPostId('category');
+                    $this->logActivity('category',$name,$lastId,'Update');
+                    return redirect('/admin/list-category')->with('message','Update Successful');
+                }else{
+                    return redirect('/admin/list-category')->with('message','Update Fail');
+                }
+            }
+        }
+        else{
+            return redirect('/admin/list-category')->with('message','Invalid Input');
+        }
+    }
+
+    public function removeCategorySubmit(Request $request){
+        $id = $request->id;
+        $Delete = DB::table('category')->where('id',$id)->delete();
+        if($Delete){
+            return redirect('/admin/list-category')->with('message','Delete Successful');
+        }else{
+            return redirect('/admin/list-category')->with('message','Delete Fail');
+        }
+    }
 }

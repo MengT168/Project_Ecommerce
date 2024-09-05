@@ -90,4 +90,23 @@ class AdminController extends Controller
             return redirect('/admin/list-logo')->with('message','Delete Fail');
         }
     }
+
+    public function listLogActivity(){
+        
+        $Dblog = DB::table('log_activity')
+        ->leftJoin('users','users.id','log_activity.authorId')
+        ->select('users.name','log_activity.*')
+        ->get();
+        return view('backend.list-log',['log'=>$Dblog]);
+    }
+    public function logDetail($post,$id,$ids){
+        $order = DB::table('subscribe')->where('status', 'pending')->count();
+        // $id = $request->id;
+        $Dblog = DB::table('log_activity')
+        ->leftJoin('users','users.id','log_activity.authorId')
+        ->select('users.name','log_activity.*')
+        ->where('log_activity.id',$ids)
+        ->get();
+        return view('backend.log-detail',['log'=>$Dblog , 'orderRow'=>$order ]);
+    }
 }

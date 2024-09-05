@@ -94,5 +94,81 @@ class ProductController extends Controller
 
         return view('backend.list-product',['product'=>$products , 'totalPage'=>$totalPage , 'currentPage'=>$currentPage]);
     }
+
+    public function updateProduct($id){
+        $DbProduct = DB::table('product')
+        ->find($id);
+        $DbCate = DB::table('category')->get();
+        return view('backend.update-product',['product'=>$DbProduct , 'cate'=>$DbCate , ]);
+    }
+
+    public function updateProductSubmit(Request $request){
+        $DBProduct = DB::table('product')->where('id',$request->id)->first();
+        $name = $request->name;
+        $qty = $request->qty;
+        $regular_price = $request->regular_price;
+        $sale_price = $request->sale_price;
+       
+        
+        $category = $request->category;
+        if($request->file('thumbnail')){
+            $file = $request->file('thumbnail');
+            $thumbnail = $this->uploadFile($file);
+        }else{
+            $thumbnail = $DBProduct->thumbnail;
+        }
+
+        if($request->file('audio_file')){
+            $file = $request->file('audio_file');
+            $audio_file = $this->uploadFileAudio($file);
+        }else{
+            $audio_file = $DBProduct->audio_file;
+        }
+        $description = $request->description;
+        if($name){
+            
+                $product = DB::table('product')->where('id',$request->id)->update([
+                    'name'=> $name,
+                    'slug' => $this->slug($name),
+                    'quantity' => $qty,
+                    'regular_price' => $regular_price,
+                    'sale_price'=> $sale_price,
+                    'category'  => $category,
+                    'thumbnail' => $thumbnail,
+                    'audio_file' => $audio_file,
+                    'viewer'    => 0,
+                    'author'    => Auth::user()->id,
+                    'description'   => $description,
+                    'updated_at'    => date('Y-m-d H:i:s'),
+                ]); 
+                if($product){
+                    $lastId = $this->getLastPostId('product');
+                    $this->logActivity('product',$name,$lastId,'Update');
+                    return redirect('/admin/list-product')->with('message','Update Product Successful');
+                }
+                else{
+                    return redirect('/admin/add-product')->with('message','Update Product Fail');
+                }            
+        }
+    }
+
+    public function removeProductSubmit(Request $request){
+        $id = $request->remove_id;
+        $Delete = DB::table('product')->where('id',$id)->delete();
+        if($Delete){
+            return redirect('/admin/list-product')->with('message','Delete Successful');
+        }else{
+            return redirect('/admin/list-product')->with('message','Delete Fail');
+        }
+    }
+
+    public function detailProduct(){
+        $products = DB::table('product')
+        ->leftJoin('users','users.id','product.authorId')
+        ->leftJoin('category','category.id','product.category')
+        ->select('category.name as cateName','users.name as authorname','product.*')
+        ->get();
+        return view('backend.detail-product',['product'=>$products ]);
+    }
     
 }

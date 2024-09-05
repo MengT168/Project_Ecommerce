@@ -259,43 +259,19 @@ a:link {
               </ul>
             </li>
 
-            <!-- <li class="menu-item">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
-                  <i class="menu-icon tf-icons bx bx-bolt-circle"></i>
-                  <div data-i18n="Layouts">Attribute</div>
-                </a>
-
-                <ul class="menu-sub">
-                  <li class="menu-item">
-                    <a href="/admin/list-attribute" class="menu-link">
-                      <div data-i18n="Without menu">View Post</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="/admin/add-attribute" class="menu-link">
-                      <div data-i18n="Without menu">Add Post</div>
-                    </a>
-                  </li>
-                </ul>
-              </li> -->
+          
 
               <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                   <i class="menu-icon tf-icons bx bx-bolt-circle"></i>
-                  <div data-i18n="Layouts">Access Order</div>
-                <div style="margin-left: 15px; background-color: #4285f4; padding: 5px 5px 0px 5px; border-radius: 30px; color: white; width: 23px; text-align: center; height: 25px;"></div>
+                  <div data-i18n="Layouts">User Infor</div>
                 <i class="menu-arrow"></i>
                 </a>
 
                 <ul class="menu-sub">
                   <li class="menu-item">
                     <a href="/admin/view-order" class="menu-link">
-                      <div data-i18n="Without menu">View Order</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="/admin/add-attribute" class="menu-link">
-                      <div data-i18n="Without menu">Add Post</div>
+                      <div data-i18n="Without menu">View User</div>
                     </a>
                   </li>
                 </ul>

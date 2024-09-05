@@ -10,6 +10,108 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <!-- SweetAlert JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+   <style>
+    .menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.menu li {
+    display: inline-block;
+    position: relative;
+}
+
+.profile-img {
+    object-fit: cover;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 60px; /* Adjust based on image height */
+    left: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    z-index: 1000;
+    width: 250px;
+}
+
+.dropdown-menu li {
+    margin: 5px 0;
+}
+
+.dropdown-menu a {
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+}
+
+.dropdown-menu a:hover {
+    color: #007bff;
+}
+result that you can see in the preview selection
+
+body{
+    margin-top:20px;
+    color: #1a202c;
+    text-align: left;
+    background-color: #e2e8f0;    
+}
+.main-body {
+    padding: 15px;
+}
+.card {
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,.1), 0 1px 2px 0 rgba(0,0,0,.06);
+}
+
+.card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border: 0 solid rgba(0,0,0,.125);
+    border-radius: .25rem;
+}
+
+.card-body {
+    flex: 1 1 auto;
+    min-height: 1px;
+    padding: 1rem;
+}
+
+.gutters-sm {
+    margin-right: -8px;
+    margin-left: -8px;
+}
+
+.gutters-sm>.col, .gutters-sm>[class*=col-] {
+    padding-right: 8px;
+    padding-left: 8px;
+}
+.mb-3, .my-3 {
+    margin-bottom: 1rem!important;
+}
+
+.bg-gray-300 {
+    background-color: #e2e8f0;
+}
+.h-100 {
+    height: 100%!important;
+}
+.shadow-none {
+    box-shadow: none!important;
+}
+
+   </style>
     </head>
     <body>
         <header>
@@ -17,9 +119,10 @@
                 <div class="logo">
                     <a href="/">
                         
-                        <h1>
+                        <!-- <h1>
                            AUDIO BOOK
-                        </h1>
+                        </h1> -->
+                        <img src="../uploads/{{$logo[0]->thumbnail}}" width="80px" style="border-radius: 40%;" > 
                     </a>
                 </div>
                 <ul class="menu">
@@ -48,19 +151,23 @@
                     </form>
                 </div>
                 <ul class="menu">
-                    <li>
-                    @if (Auth::check())
-                    <a href="/my-order"><i class="fa-solid fa-cart-shopping"></i></a>
-                    @endif
-                    </li>
-                    <li>
-                    @if (Auth::check())
-                    <a style="font-size: 16px;" href="/logout/{{Auth::user()->id}}">LOG-OUT</a>
-                    @else
-                    <a style="font-size: 16px;" href="/signin">LOG-IN</a>
-                    @endif
-                    </li>
-                </ul>
+    <li class="profile-menu" id="profileMenu">
+        @if (Auth::check())
+            <img src="/uploads/{{ Auth::user()->image }}" alt="" width="50" height="50" class="profile-img" id="profileImg">
+            <ul class="dropdown-menu" id="dropdownMenu">
+                <li><a href="/my-profile"><i class="fa-solid fa-user"></i></a></li>
+                <li><a href="/my-order"><i class="fa-solid fa-money-check-dollar"></i></a></li>
+                <li><a href="/cart-item"><i class="fa-solid fa-cart-shopping"></i></a></li>
+                <li><a href="/my-subscribe"><i class="fa-solid fa-music"></i></a></li>
+                <li><a href="/logout/{{ Auth::user()->id }}"><i class="fa-solid fa-right-from-bracket"></i></a></li>
+            </ul>
+        @else
+            <a style="font-size: 16px;" href="/signin">LOG-IN</a>
+        @endif
+    </li>
+</ul>
+
+
                
             </div>
         </header>
@@ -73,4 +180,35 @@
 
     </body>
     <script src="{{ url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+    const profileImg = document.getElementById('profileImg');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const profileMenu = document.getElementById('profileMenu');
+
+    let timeoutId;
+
+    profileImg.addEventListener('mouseover', function() {
+        dropdownMenu.style.display = 'block';
+    });
+
+    profileMenu.addEventListener('mouseleave', function() {
+        timeoutId = setTimeout(function() {
+            dropdownMenu.style.display = 'none';
+        }, 500); 
+    });
+
+    dropdownMenu.addEventListener('mouseover', function() {
+        clearTimeout(timeoutId);
+        dropdownMenu.style.display = 'block';
+    });
+
+    dropdownMenu.addEventListener('mouseleave', function() {
+        timeoutId = setTimeout(function() {
+            dropdownMenu.style.display = 'none';
+        }, 500); 
+    });
+});
+
+    </script>
 </html>

@@ -10,34 +10,32 @@
             <div class="row">
                 <div class="col-5">
                     <div class="thumbnail">
-                        <img src="/uploads/{{$product[0]->thumbnail}}" width="100%" alt="">
+                        <img src="/uploads/{{$product->thumbnail}}" width="100%" alt="">
                     </div>
                 </div>
                 <div class="col-7">
                     <div class="detail">
-                        @if ($isSubscribed)
-                            <!-- Hide price if subscribed -->
-                        @else
+                        @if (!$isSubscribed)
                             <div class="price-list">
-                                @if ($product[0]->sale_price > 0)
-                                    <div class="regular-price"><strike> US {{$product[0]->regular_price}}</strike></div>
-                                    <div class="sale-price">US {{$product[0]->sale_price}}</div>
+                                @if ($product->sale_price > 0)
+                                    <div class="regular-price"><strike> US {{$product->regular_price}}</strike></div>
+                                    <div class="sale-price">US {{$product->sale_price}}</div>
                                 @else
-                                    <div class="price">US {{$product[0]->regular_price}}</div>
+                                    <div class="price">US {{$product->regular_price}}</div>
                                 @endif
                             </div>
                         @endif
 
-                        @if($product[0]->audio_file)
-                            <audio id="productAudio" controls src="/uploads_audio/{{ $product[0]->audio_file }}"></audio>
+                        @if($product->audio_file)
+                            <audio id="productAudio" controls src="/uploads_audio/{{ $product->audio_file }}"></audio>
                         @endif
 
-                        <h5 class="title">{{$product[0]->name}}</h5>
+                        <h5 class="title">{{$product->name}}</h5>
 
                         <div class="group-size">
                             <form method="post" action="/add-cart" style="width: 250px; display: flex; gap: 10px;">
                                 @csrf
-                                <input type="hidden" value="{{$product[0]->id}}" name="proId">
+                                <input type="hidden" value="{{$product->id}}" name="proId">
                                 <input type="hidden" value="{{ $userId ?? 0 }}" name="userId">
                                 
                                 @if ($isSubscribed)
@@ -51,7 +49,7 @@
                         <div class="group-size">
                             <span class="title">Description</span>
                             <div class="description">
-                                {{$product[0]->description}}
+                                {{$product->description}}
                             </div>
                         </div>
                     </div>
@@ -74,7 +72,11 @@
                     <div class="col-3">
                         <figure>
                             <div class="thumbnail">
-                                @if ($relatedProductValue->sale_price > 0)
+                                @if (Auth::check() &&  in_array($relatedProductValue->id, $dbSubScribe))
+                                <div class="status">
+                                        Subscribe
+                                    </div>
+                                @elseif ($relatedProductValue->sale_price > 0)
                                     <div class="status">
                                         Promotion
                                     </div>
@@ -85,7 +87,9 @@
                             </div>
                             <div class="detail">
                                 <div class="price-list">
-                                    @if ($relatedProductValue->sale_price > 0)
+                                    @if (Auth::check() &&  in_array($relatedProductValue->id, $dbSubScribe))
+
+                                    @elseif ($relatedProductValue->sale_price > 0)
                                         <div class="regular-price"><strike> US {{$relatedProductValue->regular_price}}</strike></div>
                                         <div class="sale-price">US {{$relatedProductValue->sale_price}}</div>
                                     @else

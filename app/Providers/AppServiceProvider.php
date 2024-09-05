@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Middleware\AdminMiddleware;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,5 +25,12 @@ class AppServiceProvider extends ServiceProvider
         Route::middlewareGroup('admin', [
             AdminMiddleware::class,
         ]);
+        view()->composer('frontend.layout', function($view){
+            $logo = DB::table('logo')
+                        ->orderByDesc('id')
+                        ->limit(1)
+                        ->get();
+            return $view->with('logo', $logo);
+        });
     }
 }
